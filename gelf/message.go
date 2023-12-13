@@ -121,7 +121,13 @@ func (m *Message) toBytes(buf *bytes.Buffer) (messageBytes []byte, err error) {
 	return messageBytes, nil
 }
 
-func constructMessage(p []byte, hostname string, facility string, file string, line int) (m *Message) {
+func constructMessage(p []byte, hostname string, facility string, extraFields map[string]interface{}) (m *Message) {
+	extraFieldsCopy := map[string]interface{}{}
+	// Copy from the original map to the target map
+	for key, value := range extraFields {
+		extraFieldsCopy[key] = value
+	}
+
 	// remove trailing and leading whitespace
 	p = bytes.TrimSpace(p)
 
@@ -144,10 +150,7 @@ func constructMessage(p []byte, hostname string, facility string, file string, l
 		TimeUnix: float64(time.Now().UnixNano()) / float64(time.Second),
 		Level:    6, // info
 		Facility: facility,
-		Extra: map[string]interface{}{
-			"_file": file,
-			"_line": line,
-		},
+		Extra:    extraFieldsCopy,
 	}
 
 	return m

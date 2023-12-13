@@ -18,6 +18,8 @@ type TCPWriter struct {
 	mu             sync.Mutex
 	MaxReconnect   int
 	ReconnectDelay time.Duration
+
+	ExtraFields map[string]interface{}
 }
 
 func NewTCPWriter(addr string) (*TCPWriter, error) {
@@ -36,6 +38,13 @@ func NewTCPWriter(addr string) (*TCPWriter, error) {
 	}
 
 	return w, nil
+}
+
+func (w *TCPWriter) WithFields(fields map[string]interface{}) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
+	w.ExtraFields = fields
 }
 
 // WriteMessage sends the specified message to the GELF server
@@ -65,9 +74,10 @@ func (w *TCPWriter) WriteMessage(m *Message) (err error) {
 
 func (w *TCPWriter) Write(p []byte) (n int, err error) {
 	file, line := getCallerIgnoringLogMulti(1)
+	w.ExtraFields["_line"] = line
+	w.ExtraFields["_file"] = file
 
-	m := constructMessage(p, w.hostname, w.Facility, file, line)
-
+	m := constructMessage(p, w.hostname, w.Facility, w.ExtraFields)
 	if err = w.WriteMessage(m); err != nil {
 		return 0, err
 	}
