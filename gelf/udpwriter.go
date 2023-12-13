@@ -20,8 +20,10 @@ import (
 
 type UDPWriter struct {
 	GelfWriter
+	mu               sync.Mutex
 	CompressionLevel int // one of the consts from compress/flate
 	CompressionType  CompressType
+	ExtraFields      map[string]interface{}
 }
 
 // What compression type the writer should use when sending messages
@@ -84,8 +86,8 @@ func NewUDPWriter(addr string) (*UDPWriter, error) {
 // of GELF chunked messages.  The format is documented at
 // http://docs.graylog.org/en/2.1/pages/gelf.html as:
 //
-//     2-byte magic (0x1e 0x0f), 8 byte id, 1 byte sequence id, 1 byte
-//     total, chunk-data
+//	2-byte magic (0x1e 0x0f), 8 byte id, 1 byte sequence id, 1 byte
+//	total, chunk-data
 func (w *GelfWriter) writeChunked(zBytes []byte) (err error) {
 	b := make([]byte, 0, ChunkSize)
 	buf := bytes.NewBuffer(b)
@@ -215,13 +217,21 @@ func (w *UDPWriter) WriteMessage(m *Message) (err error) {
 	return nil
 }
 
+func (w *UDPWriter) WithFields(fields map[string]interface{}) {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	w.ExtraFields = fields
+}
+
 // Write encodes the given string in a GELF message and sends it to
 // the server specified in New().
 func (w *UDPWriter) Write(p []byte) (n int, err error) {
 	// 1 for the function that called us.
 	file, line := getCallerIgnoringLogMulti(1)
+	w.ExtraFields["_line"] = line
+	w.ExtraFields["_file"] = file
 
-	m := constructMessage(p, w.hostname, w.Facility, file, line)
+	m := constructMessage(p, w.hostname, w.Facility, w.ExtraFields)
 
 	if err = w.WriteMessage(m); err != nil {
 		return 0, err

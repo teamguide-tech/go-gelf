@@ -1,6 +1,6 @@
 language: go
 go:
-  - 1.8.x
+  - 1.20.x
   - tip
 script:
   - go vet -v ./gelf/...
