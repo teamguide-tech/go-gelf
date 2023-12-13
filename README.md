@@ -35,7 +35,7 @@ Graylog server.
 
 Installing
 ----------
-> go get https://github.com/Victorblsilveira/go-gelf/v2
+> go get github.com/Victorblsilveira/go-gelf/v2
 
 Usage
 -----
