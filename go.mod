@@ -1,3 +1,3 @@
-module victorblsilveira/go-gelf
+module go-gelf
 
 go 1.20
