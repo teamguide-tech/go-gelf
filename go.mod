@@ -1,3 +1,3 @@
-module github.com/Victorblsilveira/go-gelf
+module github.com/teamguide-tech/go-gelf
 
 go 1.20
